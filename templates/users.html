@@ -1,0 +1,166 @@
+{% extends "base.html" %}
+{% block title %}Usuários{% endblock %}
+
+{% block content %}
+<!-- Topbar -->
+<div class="topbar">
+  <div class="topbar-title">
+    <h1>Gestão de Usuários</h1>
+    <p>Controle de acesso e perfis do sistema</p>
+  </div>
+  <div class="topbar-actions">
+    <button class="btn btn-primary" onclick="openAddUser()">
+      ＋ Novo Usuário
+    </button>
+  </div>
+</div>
+
+<div class="page-body">
+  <div class="card">
+    <div class="card-header">
+      <h3>Usuários Cadastrados <span style="color:var(--text-muted);font-weight:400;">({{ users | length }})</span></h3>
+    </div>
+
+    <div class="card-body" style="padding-bottom:0;">
+      <div class="toolbar">
+        <input type="text" class="search-input"
+               id="user-search"
+               placeholder="🔍  Buscar por nome, e-mail ou perfil…"
+               oninput="filterTable('user-search', 'user-tbody')">
+      </div>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Nome</th>
+            <th>E-mail</th>
+            <th>Perfil</th>
+            <th>Status</th>
+            <th>Cadastrado em</th>
+            <th style="text-align:center;">Ações</th>
+          </tr>
+        </thead>
+        <tbody id="user-tbody">
+          {% if users %}
+            {% for u in users %}
+            <tr>
+              <td class="text-muted">{{ u.id }}</td>
+              <td>
+                <div class="d-flex align-center gap-2">
+                  <div style="width:30px;height:30px;border-radius:50%;background:var(--accent-light);
+                              border:1px solid rgba(192,57,43,.3);display:flex;align-items:center;
+                              justify-content:center;font-weight:700;font-size:12px;color:var(--accent);flex-shrink:0;">
+                    {{ u.name[0] | upper }}
+                  </div>
+                  <span class="fw-600">{{ u.name }}</span>
+                </div>
+              </td>
+              <td class="text-muted">{{ u.email }}</td>
+              <td>
+                <span class="badge badge-{{ u.role }}">
+                  {% if u.role == 'admin' %}👑 Admin
+                  {% elif u.role == 'manager' %}🔑 Gerente
+                  {% else %}👤 Funcionário{% endif %}
+                </span>
+              </td>
+              <td>
+                {% if u.active %}
+                  <span class="badge badge-active">● Ativo</span>
+                {% else %}
+                  <span class="badge badge-disabled">○ Inativo</span>
+                {% endif %}
+              </td>
+              <td class="text-muted text-sm">{{ u.created_at[:10] }}</td>
+              <td>
+                <div class="row-actions" style="justify-content:center;">
+                  <button class="btn btn-ghost btn-sm" title="Editar"
+                    onclick="openEditUser(
+                      {{ u.id }},
+                      {{ u.name | tojson }},
+                      {{ u.email | tojson }},
+                      {{ u.role | tojson }},
+                      {{ u.active }}
+                    )">✏️</button>
+                  {% if u.id != session.user_id %}
+                  <button class="btn btn-danger-outline btn-sm" title="Remover"
+                    onclick="deleteUser({{ u.id }}, {{ u.name | tojson }})">🗑️</button>
+                  {% endif %}
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          {% else %}
+          <tr>
+            <td colspan="7">
+              <div class="empty">
+                <div class="empty-icon">👥</div>
+                <p>Nenhum usuário encontrado.</p>
+              </div>
+            </td>
+          </tr>
+          {% endif %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Info box -->
+  <div style="margin-top:18px;padding:14px 18px;background:var(--bg-card);border:1px solid var(--border);
+              border-radius:8px;font-size:12px;color:var(--text-muted);display:flex;gap:20px;flex-wrap:wrap;">
+    <span>👑 <strong style="color:var(--accent)">Admin</strong> — Acesso total: gerencia usuários, recursos e configurações</span>
+    <span>🔑 <strong style="color:var(--info)">Gerente</strong> — Pode adicionar e editar recursos</span>
+    <span>👤 <strong style="color:#666">Funcionário</strong> — Apenas visualização</span>
+  </div>
+</div>
+
+<!-- ════ Modal Add/Edit User ════ -->
+<div id="user-modal" class="overlay">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="user-modal-title">Novo Usuário</h3>
+      <button class="modal-close" onclick="closeModal('user-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <form id="user-form" onsubmit="return false;">
+        <div class="form-row">
+          <div class="form-group">
+            <label>Nome *</label>
+            <input type="text" id="u-name" placeholder="Nome completo">
+          </div>
+          <div class="form-group">
+            <label>Perfil *</label>
+            <select id="u-role">
+              <option value="employee">👤 Funcionário</option>
+              <option value="manager">🔑 Gerente</option>
+              <option value="admin">👑 Admin</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>E-mail *</label>
+          <input type="email" id="u-email" placeholder="email@wayne.com">
+        </div>
+        <div class="form-group">
+          <label>Senha *</label>
+          <input type="password" id="u-password" placeholder="Mínimo 6 caracteres">
+          <p class="hint" id="pw-hint" style="display:none;">Deixe em branco para manter a senha atual.</p>
+        </div>
+        <div class="form-group">
+          <label>Status</label>
+          <select id="u-active">
+            <option value="1">● Ativo</option>
+            <option value="0">○ Inativo</option>
+          </select>
+        </div>
+      </form>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('user-modal')">Cancelar</button>
+      <button class="btn btn-primary" id="user-save-btn" onclick="saveUser()">Salvar</button>
+    </div>
+  </div>
+</div>
+{% endblock %}

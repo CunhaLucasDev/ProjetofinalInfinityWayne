@@ -1,0 +1,165 @@
+{% extends "base.html" %}
+{% block title %}Recursos{% endblock %}
+
+{% block content %}
+<!-- Topbar -->
+<div class="topbar">
+  <div class="topbar-title">
+    <h1>Gestão de Recursos</h1>
+    <p>Inventário de equipamentos, veículos e dispositivos</p>
+  </div>
+  <div class="topbar-actions">
+    {% if session.role in ['admin', 'manager'] %}
+    <button class="btn btn-primary" onclick="openAddResource()">
+      ＋ Novo Recurso
+    </button>
+    {% endif %}
+  </div>
+</div>
+
+<div class="page-body">
+  <div class="card">
+    <div class="card-header">
+      <h3>Todos os Recursos <span style="color:var(--text-muted);font-weight:400;">({{ resources | length }})</span></h3>
+    </div>
+
+    <div class="card-body" style="padding-bottom:0;">
+      <div class="toolbar">
+        <input type="text" class="search-input"
+               id="res-search"
+               placeholder="🔍  Buscar recursos…"
+               oninput="filterTable('res-search', 'res-tbody')">
+      </div>
+    </div>
+
+    <div class="table-wrap">
+      {% set type_labels = {
+          'vehicle': '🚗 Veículo',
+          'equipment': '⚙️ Equipamento',
+          'security_device': '🔐 Dispositivo'
+      } %}
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Nome</th>
+            <th>Tipo</th>
+            <th>Status</th>
+            <th>Localização</th>
+            <th>Descrição</th>
+            <th>Atualizado em</th>
+            {% if session.role in ['admin', 'manager'] %}
+            <th style="text-align:center;">Ações</th>
+            {% endif %}
+          </tr>
+        </thead>
+        <tbody id="res-tbody">
+          {% if resources %}
+            {% for r in resources %}
+            <tr>
+              <td class="text-muted">{{ r.id }}</td>
+              <td class="fw-600">{{ r.name }}</td>
+              <td>
+                <span class="badge badge-{{ r.type }}">
+                  {{ type_labels.get(r.type, r.type) }}
+                </span>
+              </td>
+              <td>
+                <span class="badge badge-{{ r.status }}">
+                  {% if r.status == 'operational' %}● Operacional
+                  {% elif r.status == 'maintenance' %}⚙ Manutenção
+                  {% else %}○ Inativo{% endif %}
+                </span>
+              </td>
+              <td>{{ r.location or '—' }}</td>
+              <td style="max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+                {{ r.description or '—' }}
+              </td>
+              <td class="text-muted text-sm">{{ r.updated_at[:10] }}</td>
+              {% if session.role in ['admin', 'manager'] %}
+              <td>
+                <div class="row-actions" style="justify-content:center;">
+                  <button class="btn btn-ghost btn-sm" title="Editar"
+                    onclick="openEditResource(
+                      {{ r.id }},
+                      {{ r.name | tojson }},
+                      {{ r.type | tojson }},
+                      {{ r.status | tojson }},
+                      {{ (r.location or '') | tojson }},
+                      {{ (r.description or '') | tojson }}
+                    )">✏️</button>
+                  {% if session.role == 'admin' %}
+                  <button class="btn btn-danger-outline btn-sm" title="Remover"
+                    onclick="deleteResource({{ r.id }}, {{ r.name | tojson }})">🗑️</button>
+                  {% endif %}
+                </div>
+              </td>
+              {% endif %}
+            </tr>
+            {% endfor %}
+          {% else %}
+          <tr>
+            <td colspan="8">
+              <div class="empty">
+                <div class="empty-icon">📦</div>
+                <p>Nenhum recurso cadastrado ainda.</p>
+              </div>
+            </td>
+          </tr>
+          {% endif %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ════ Modal Add/Edit Resource ════ -->
+{% if session.role in ['admin', 'manager'] %}
+<div id="res-modal" class="overlay">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="res-modal-title">Novo Recurso</h3>
+      <button class="modal-close" onclick="closeModal('res-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <form id="res-form" onsubmit="return false;">
+        <div class="form-group">
+          <label>Nome *</label>
+          <input type="text" id="r-name" placeholder="Ex.: Batmóvel MK IV">
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Tipo *</label>
+            <select id="r-type">
+              <option value="vehicle">🚗 Veículo</option>
+              <option value="equipment">⚙️ Equipamento</option>
+              <option value="security_device">🔐 Dispositivo de Segurança</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Status *</label>
+            <select id="r-status">
+              <option value="operational">● Operacional</option>
+              <option value="maintenance">⚙ Em Manutenção</option>
+              <option value="inactive">○ Inativo</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Localização</label>
+          <input type="text" id="r-location" placeholder="Ex.: Hangar B-1">
+        </div>
+        <div class="form-group">
+          <label>Descrição</label>
+          <textarea id="r-description" placeholder="Descreva o recurso…"></textarea>
+        </div>
+      </form>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('res-modal')">Cancelar</button>
+      <button class="btn btn-primary" id="res-save-btn" onclick="saveResource()">Salvar</button>
+    </div>
+  </div>
+</div>
+{% endif %}
+{% endblock %}

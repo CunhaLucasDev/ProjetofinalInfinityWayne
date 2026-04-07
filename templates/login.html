@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Wayne Industries — Acesso</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body class="login-body">
+
+<div class="login-container">
+  <div class="login-card">
+
+    <div class="login-logo">
+      <div class="bat-icon">W</div>
+      <h1>WAYNE INDUSTRIES</h1>
+      <p>Sistema de Controle de Segurança</p>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for cat, msg in messages %}
+          <div class="alert alert-{{ cat }}">⚠ {{ msg }}</div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <hr class="login-divider">
+
+    <form method="POST" action="/login">
+      <div class="form-group">
+        <label>E-mail</label>
+        <input type="email" name="email"
+               placeholder="seu@wayne.com" required autofocus>
+      </div>
+      <div class="form-group">
+        <label>Senha</label>
+        <input type="password" name="password"
+               placeholder="••••••••" required>
+      </div>
+      <button type="submit" class="btn btn-primary btn-full">
+        🔐 &nbsp;ACESSAR SISTEMA
+      </button>
+    </form>
+
+    <div class="login-footer">
+      🔒 Acesso restrito ao pessoal autorizado das Indústrias Wayne
+    </div>
+
+  </div>
+
+  <p style="text-align:center;margin-top:14px;font-size:10px;color:#333;letter-spacing:1px;">
+    CONTAS DE DEMONSTRAÇÃO &nbsp;·&nbsp;
+    bruce@wayne.com / batman123 &nbsp;|&nbsp;
+    alfred@wayne.com / butler456
+  </p>
+</div>
+
+</body>
+</html>

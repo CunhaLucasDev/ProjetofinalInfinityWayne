@@ -1,0 +1,157 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<!-- Topbar -->
+<div class="topbar">
+  <div class="topbar-title">
+    <h1>Dashboard</h1>
+    <p>Visão geral das Indústrias Wayne</p>
+  </div>
+  <div class="topbar-actions">
+    <span style="font-size:11px;color:var(--text-muted);">
+      Bem-vindo, {{ session.name }}
+    </span>
+  </div>
+</div>
+
+<div class="page-body">
+
+  <!-- ── Stat Cards ── -->
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-icon icon-blue">🗄️</div>
+      <div>
+        <div class="stat-value">{{ stats.total_resources }}</div>
+        <div class="stat-label">Total de Recursos</div>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon icon-green">✅</div>
+      <div>
+        <div class="stat-value">{{ stats.operational }}</div>
+        <div class="stat-label">Operacionais</div>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon icon-yellow">🔧</div>
+      <div>
+        <div class="stat-value">{{ stats.maintenance }}</div>
+        <div class="stat-label">Em Manutenção</div>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon icon-red">👥</div>
+      <div>
+        <div class="stat-value">{{ stats.total_users }}</div>
+        <div class="stat-label">Usuários Ativos</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Row 1: Charts ── -->
+  <div class="two-col mb-3" style="margin-bottom:22px;">
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <h3>Recursos por Tipo</h3>
+          <div class="sub">Distribuição do inventário</div>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="chart-box"><canvas id="chart-type"></canvas></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <h3>Status dos Recursos</h3>
+          <div class="sub">Operacional / Manutenção / Inativo</div>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="chart-box"><canvas id="chart-status"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Row 2: Logs + Users chart ── -->
+  <div class="two-col">
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <h3>Atividade Recente</h3>
+          <div class="sub">Últimas ações no sistema</div>
+        </div>
+      </div>
+      <div class="card-body" style="padding-top:10px;">
+        {% if logs %}
+        <div class="log-list">
+          {% for log in logs %}
+          {% set action_map = {
+              'LOGIN': ('dot-login',   '🔓 Login'),
+              'LOGOUT':('dot-logout',  '🔒 Logout'),
+              'ADD_RESOURCE':    ('dot-add',    '➕ Recurso adicionado'),
+              'UPDATE_RESOURCE': ('dot-update', '✏️ Recurso atualizado'),
+              'DELETE_RESOURCE': ('dot-delete', '🗑️ Recurso removido'),
+          } %}
+          {% set dot_class, label = action_map.get(log.action, ('dot-add', log.action)) %}
+          <div class="log-entry">
+            <div class="log-dot {{ dot_class }}"></div>
+            <div class="log-text">
+              <div class="log-action">{{ label }}</div>
+              <div class="log-who">{{ log.user_name or 'Sistema' }}</div>
+            </div>
+            <div class="log-time">
+              {{ log.timestamp[:16] | replace('T', ' ') }}
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty">
+          <div class="empty-icon">📋</div>
+          <p>Nenhuma atividade registrada.</p>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <h3>Usuários por Perfil</h3>
+          <div class="sub">Admins / Gerentes / Funcionários</div>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="chart-box"><canvas id="chart-users"></canvas></div>
+        <div style="display:flex;gap:18px;justify-content:center;margin-top:18px;flex-wrap:wrap;">
+          <div style="text-align:center;">
+            <div style="font-size:22px;font-weight:800;color:var(--accent);">{{ stats.admins }}</div>
+            <div class="text-sm text-muted">Admins</div>
+          </div>
+          <div style="text-align:center;">
+            <div style="font-size:22px;font-weight:800;color:var(--info);">{{ stats.managers }}</div>
+            <div class="text-sm text-muted">Gerentes</div>
+          </div>
+          <div style="text-align:center;">
+            <div style="font-size:22px;font-weight:800;color:#666;">{{ stats.employees }}</div>
+            <div class="text-sm text-muted">Funcionários</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+  const stats = {{ stats | tojson }};
+  document.addEventListener('DOMContentLoaded', () => initCharts(stats));
+</script>
+{% endblock %}
