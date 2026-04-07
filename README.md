@@ -123,4 +123,4 @@ http://localhost:5000
 
 ---
 
-*Desenvolvido para o Projeto Final — Infinity School · Dev Full Stack*
+*Desenvolvido para o Projeto Final — Infinity School · Dev Full Stack By Lucas Cunha *
